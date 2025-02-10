@@ -1,5 +1,6 @@
 import glob
 import os
+os.environ['NO_ALBUMENTATIONS_UPDATE'] = '1'
 import numpy as np
 import cv2
 from PIL import Image

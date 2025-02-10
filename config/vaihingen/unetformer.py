@@ -6,7 +6,7 @@ from tools.utils import Lookahead
 from tools.utils import process_model_params
 
 # training hparam
-max_epoch = 105
+max_epoch = 100
 ignore_index = len(CLASSES)
 train_batch_size = 8
 val_batch_size = 8
@@ -17,9 +17,9 @@ backbone_weight_decay = 0.01
 num_classes = len(CLASSES)
 classes = CLASSES
 
-weights_name = "unetformer-r18-512-crop-ms-e105"
+weights_name = "unetformer-r18-512-crop-ms-e100"
 weights_path = "model_weights/vaihingen/{}".format(weights_name)
-test_weights_name = "unetformer-r18-512-crop-ms-e105"
+test_weights_name = "unetformer-r18-512-crop-ms-e100"
 log_name = 'vaihingen/{}'.format(weights_name)
 monitor = 'val_F1'
 monitor_mode = 'max'

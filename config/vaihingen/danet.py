@@ -1,13 +1,12 @@
 from torch.utils.data import DataLoader
 from geoseg.losses import *
 from geoseg.datasets.vaihingen_dataset import *
-from geoseg.models.ABCNet import ABCNet
-from geoseg.losses.useful_loss import ABCLoss
+from geoseg.models.danet import DAnet
 from tools.utils import Lookahead
 from tools.utils import process_model_params
 
 # training hparam
-max_epoch = 105
+max_epoch = 100
 ignore_index = len(CLASSES)
 train_batch_size = 8
 val_batch_size = 8
@@ -18,11 +17,11 @@ backbone_weight_decay = 0.01
 num_classes = len(CLASSES)
 classes = CLASSES
 
-weights_name = "abcnet-r18-1024-crop-ms-e105"
+weights_name = "pspnet-r50-1024-crop-ms-e100"
 weights_path = "model_weights/vaihingen/{}".format(weights_name)
-test_weights_name = "abcnet-r18-1024-crop-ms-e105"
+test_weights_name = "pspnet-r50-1024-crop-ms-e100"
 log_name = 'vaihingen/{}'.format(weights_name)
-monitor = 'val_mIoU'
+monitor = 'val_F1'
 monitor_mode = 'max'
 save_top_k = 1
 save_last = True
@@ -32,11 +31,11 @@ gpus = 'auto'  # default or gpu ids:[0] or gpu nums: 2, more setting can refer t
 resume_ckpt_path = None  # whether continue training with the checkpoint, default None
 
 #  define the network
-net = ABCNet(n_classes=num_classes)
+net = DAnet(num_classes=num_classes)
 
 # define the loss
-loss = ABCLoss(ignore_index=ignore_index)
-use_aux_loss = True
+loss = PSPLoss(ignore_index=ignore_index)
+use_aux_loss = False
 
 # define the dataloader
 

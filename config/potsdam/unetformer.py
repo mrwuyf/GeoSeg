@@ -6,7 +6,7 @@ from tools.utils import Lookahead
 from tools.utils import process_model_params
 
 # training hparam
-max_epoch = 45
+max_epoch = 100
 ignore_index = len(CLASSES)
 train_batch_size = 8
 val_batch_size = 8
@@ -17,9 +17,9 @@ backbone_weight_decay = 0.01
 num_classes = len(CLASSES)
 classes = CLASSES
 
-weights_name = "unetformer-r18-768crop-ms-e45"
+weights_name = "unetformer-r18-1024crop-ms-e100"
 weights_path = "model_weights/potsdam/{}".format(weights_name)
-test_weights_name = "unetformer-r18-768crop-ms-e45"
+test_weights_name = "unetformer-r18-1024crop-ms-e100"
 log_name = 'potsdam/{}'.format(weights_name)
 monitor = 'val_F1'
 monitor_mode = 'max'

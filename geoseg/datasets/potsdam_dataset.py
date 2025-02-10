@@ -1,4 +1,5 @@
 import os
+os.environ['NO_ALBUMENTATIONS_UPDATE'] = '1'
 import os.path as osp
 import numpy as np
 import torch
@@ -19,6 +20,8 @@ ORIGIN_IMG_SIZE = (1024, 1024)
 INPUT_IMG_SIZE = (1024, 1024)
 TEST_IMG_SIZE = (1024, 1024)
 
+
+
 def get_training_transform():
     train_transform = [
         # albu.RandomBrightnessContrast(brightness_limit=0.25, contrast_limit=0.25, p=0.15),
@@ -30,7 +33,7 @@ def get_training_transform():
 
 def train_aug(img, mask):
     crop_aug = Compose([RandomScale(scale_list=[0.75, 1.0, 1.25, 1.5], mode='value'),
-                        SmartCropV1(crop_size=768, max_ratio=0.75, ignore_index=len(CLASSES), nopad=False)])
+                        SmartCropV1(crop_size=512, max_ratio=0.75, ignore_index=len(CLASSES), nopad=False)])
     img, mask = crop_aug(img, mask)
     img, mask = np.array(img), np.array(mask)
     aug = get_training_transform()(image=img.copy(), mask=mask.copy())

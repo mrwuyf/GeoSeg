@@ -2,6 +2,8 @@ import pytorch_lightning as pl
 from pytorch_lightning.callbacks import ModelCheckpoint
 from tools.cfg import py2cfg
 import os
+os.environ['NO_ALBUMENTATIONS_UPDATE'] = '1'
+
 import torch
 from torch import nn
 import cv2
@@ -184,4 +186,4 @@ def main():
 
 
 if __name__ == "__main__":
-   main()
+    main()

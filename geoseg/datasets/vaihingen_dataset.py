@@ -230,3 +230,6 @@ def show_mask(img, mask, img_id):
     ax2.imshow(mask)
     ax2.set_title('Mask ' + str(img_id)+'.png')
     ax2.legend(handles=patches, bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0., fontsize='large')
+
+
+

@@ -7,7 +7,7 @@ import cv2
 import numpy as np
 import torch
 import albumentations as albu
-from catalyst.dl import SupervisedRunner
+# from catalyst.dl import SupervisedRunner
 from skimage.morphology import remove_small_holes, remove_small_objects
 from tools.cfg import py2cfg
 from torch import nn
