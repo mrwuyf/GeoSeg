@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from einops import rearrange, repeat
+from thop import profile
 
 from timm.models.layers import DropPath, to_2tuple, trunc_normal_
 import timm
@@ -134,10 +135,12 @@ class GlobalLocalAttention(nn.Module):
 
     def pad(self, x, ps):
         _, _, H, W = x.size()
-        if W % ps != 0:
-            x = F.pad(x, (0, ps - W % ps), mode='reflect')
-        if H % ps != 0:
-            x = F.pad(x, (0, 0, 0, ps - H % ps), mode='reflect')
+        # 计算需要的填充量
+        pad_h = ps - H % ps if H % ps != 0 else 0
+        pad_w = ps - W % ps if W % ps != 0 else 0
+        # 填充（确保x是4D张量）
+        if pad_h > 0 or pad_w > 0:
+            x = F.pad(x, (0, pad_w, 0, pad_h), mode='reflect')
         return x
 
     def pad_out(self, x):
@@ -374,3 +377,13 @@ class UNetFormer(nn.Module):
         else:
             x = self.decoder(res1, res2, res3, res4, h, w)
             return x
+
+if __name__ == '__main__':
+    net = UNetFormer(num_classes=6)
+    net.cuda()
+    net.train()
+    in_ten = torch.randn(4, 3, 512, 512).cuda()
+    out = net(in_ten)
+    flops, params = profile(net, (in_ten,))
+    print('flops: ', flops, 'params: ', params)
+    print('flops: %.2f G, params: %.2f M' % (flops / 1000000000.0, params / 1000000.0))

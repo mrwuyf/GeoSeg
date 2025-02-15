@@ -3,6 +3,7 @@ import torch.nn as nn
 import timm
 from torch.nn import BatchNorm2d
 from torch.nn import Module, Conv2d, Parameter
+from thop import profile
 
 
 def conv3otherRelu(in_planes, out_planes, kernel_size=None, stride=None, padding=None):
@@ -335,8 +336,11 @@ if __name__ == "__main__":
     net.train()
     in_ten = torch.randn(4, 3, 512, 512).cuda()
     out = net(in_ten)
-    print(out[0].shape)
-    # print(out16.shape)
-    # print(out32.shape)
-
-    net.get_params()
+    flops, params = profile(net, (in_ten,))
+    print('flops: ', flops, 'params: ', params)
+    print('flops: %.2f G, params: %.2f M' % (flops / 1000000000.0, params / 1000000.0))
+    # print(out[0].shape)
+    # # print(out16.shape)
+    # # print(out32.shape)
+    #
+    # net.get_params()

@@ -1,7 +1,7 @@
 from torch.utils.data import DataLoader
 from geoseg.losses import *
 from geoseg.datasets.vaihingen_dataset import *
-from geoseg.models.UNet import Unet
+from geoseg.models.MANet import MANet
 from catalyst.contrib.nn import Lookahead
 from catalyst.utils import process_model_params
 
@@ -17,9 +17,9 @@ backbone_weight_decay = 0.01
 num_classes = len(CLASSES)
 classes = CLASSES
 
-weights_name = "unet-r50-512-crop-ms-e100"
+weights_name = "man-r50-1024-crop-ms-e100"
 weights_path = "model_weights/vaihingen/{}".format(weights_name)
-test_weights_name = "unet-r50-512-crop-ms-e100"
+test_weights_name = "man-r50-1024-crop-ms-e100"
 log_name = 'vaihingen/{}'.format(weights_name)
 monitor = 'val_F1'
 monitor_mode = 'max'
@@ -31,7 +31,7 @@ gpus = 'auto'  # default or gpu ids:[0] or gpu nums: 2, more setting can refer t
 resume_ckpt_path = None  # whether continue training with the checkpoint, default None
 
 #  define the network
-net = Unet(num_classes=num_classes)
+net = MANet(num_classes=num_classes)
 
 # define the loss
 loss = JointLoss(SoftCrossEntropyLoss(smooth_factor=0.05, ignore_index=ignore_index),

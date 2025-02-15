@@ -24,6 +24,21 @@ class DeepLabV3(_SimpleSegmentationModel):
     """
     pass
 
+class DeepLabV3Plus(nn.Module):
+    def __init__(self, backbone, classifier):
+        super(DeepLabV3Plus, self).__init__()
+        self.backbone = backbone
+        self.classifier = classifier
+
+    def forward(self, x):
+        input_shape = x.shape[-2:]
+        res1, res2, res3, res4 = self.backbone(x)
+        x = self.classifier(res1, res4)
+        x = F.interpolate(x, size=input_shape, mode='bilinear', align_corners=False)
+        return x
+
+
+
 class DeepLabHeadV3Plus(nn.Module):
     def __init__(self, in_channels, low_level_channels, num_classes, aspp_dilate=[12, 24, 36]):
         super(DeepLabHeadV3Plus, self).__init__()
@@ -43,9 +58,9 @@ class DeepLabHeadV3Plus(nn.Module):
         )
         self._init_weight()
 
-    def forward(self, feature):
-        low_level_feature = self.project(feature['low_level'])
-        output_feature = self.aspp(feature['out'])
+    def forward(self, features):
+        low_level_feature = self.project(features['low_level'])
+        output_feature = self.aspp(features['out'])
         output_feature = F.interpolate(output_feature, size=low_level_feature.shape[2:], mode='bilinear',
                                        align_corners=False)
         return self.classifier(torch.cat([low_level_feature, output_feature], dim=1))

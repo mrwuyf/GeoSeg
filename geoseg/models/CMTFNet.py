@@ -4,6 +4,7 @@ import torch.nn.functional as F
 from einops import rearrange, repeat
 from geoseg.models.ResNet import *
 from timm.models.layers import DropPath, to_2tuple, trunc_normal_
+import timm
 
 class ConvBNReLU(nn.Sequential):
     def __init__(self, in_channels, out_channels, kernel_size=3, dilation=1, stride=1, norm_layer=nn.BatchNorm2d, groups=1, bias=False):
@@ -357,7 +358,8 @@ class CMTFNet(nn.Module):
                  ):
         super().__init__()
 
-        self.backbone = backbone()
+        self.backbone =timm.create_model('resnet50', features_only=True, output_stride=32,
+                                          out_indices=(1, 2, 3, 4), pretrained=True)
         self.decoder = Decoder(encode_channels, decode_channels, dropout=dropout, num_classes=num_classes)
 
     def forward(self, x):

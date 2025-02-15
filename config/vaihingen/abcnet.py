@@ -2,12 +2,11 @@ from torch.utils.data import DataLoader
 from geoseg.losses import *
 from geoseg.datasets.vaihingen_dataset import *
 from geoseg.models.ABCNet import ABCNet
-from geoseg.losses.useful_loss import ABCLoss
-from tools.utils import Lookahead
-from tools.utils import process_model_params
+from catalyst.contrib.nn import Lookahead
+from catalyst.utils import process_model_params
 
 # training hparam
-max_epoch = 105
+max_epoch = 100
 ignore_index = len(CLASSES)
 train_batch_size = 8
 val_batch_size = 8
@@ -18,11 +17,11 @@ backbone_weight_decay = 0.01
 num_classes = len(CLASSES)
 classes = CLASSES
 
-weights_name = "abcnet-r18-1024-crop-ms-e105"
+weights_name = "abcnet-r18-512-crop-ms-e100"
 weights_path = "model_weights/vaihingen/{}".format(weights_name)
-test_weights_name = "abcnet-r18-1024-crop-ms-e105"
+test_weights_name = "abcnet-r18-512-crop-ms-e100"
 log_name = 'vaihingen/{}'.format(weights_name)
-monitor = 'val_mIoU'
+monitor = 'val_F1'
 monitor_mode = 'max'
 save_top_k = 1
 save_last = True
@@ -67,3 +66,4 @@ net_params = process_model_params(net, layerwise_params=layerwise_params)
 base_optimizer = torch.optim.AdamW(net_params, lr=lr, weight_decay=weight_decay)
 optimizer = Lookahead(base_optimizer)
 lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingWarmRestarts(optimizer, T_0=15, T_mult=2)
+

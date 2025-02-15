@@ -1,9 +1,9 @@
 from torch.utils.data import DataLoader
 from geoseg.losses import *
 from geoseg.datasets.vaihingen_dataset import *
-from geoseg.models.danet import DAnet
-from tools.utils import Lookahead
-from tools.utils import process_model_params
+from geoseg.models.danet import DANet
+from catalyst.contrib.nn import Lookahead
+from catalyst import utils
 
 # training hparam
 max_epoch = 100
@@ -17,9 +17,9 @@ backbone_weight_decay = 0.01
 num_classes = len(CLASSES)
 classes = CLASSES
 
-weights_name = "pspnet-r50-1024-crop-ms-e100"
+weights_name = "danet-r50-512-crop-ms-e100"
 weights_path = "model_weights/vaihingen/{}".format(weights_name)
-test_weights_name = "pspnet-r50-1024-crop-ms-e100"
+test_weights_name = "danet-r50-512-crop-ms-e100"
 log_name = 'vaihingen/{}'.format(weights_name)
 monitor = 'val_F1'
 monitor_mode = 'max'
@@ -31,10 +31,11 @@ gpus = 'auto'  # default or gpu ids:[0] or gpu nums: 2, more setting can refer t
 resume_ckpt_path = None  # whether continue training with the checkpoint, default None
 
 #  define the network
-net = DAnet(num_classes=num_classes)
+net = DANet(num_classes=num_classes)
 
 # define the loss
-loss = PSPLoss(ignore_index=ignore_index)
+loss = JointLoss(SoftCrossEntropyLoss(smooth_factor=0.05, ignore_index=ignore_index),
+                 DiceLoss(smooth=0.05, ignore_index=ignore_index), 1.0, 1.0)
 use_aux_loss = False
 
 # define the dataloader
@@ -62,7 +63,8 @@ val_loader = DataLoader(dataset=val_dataset,
 
 # define the optimizer
 layerwise_params = {"backbone.*": dict(lr=backbone_lr, weight_decay=backbone_weight_decay)}
-net_params = process_model_params(net, layerwise_params=layerwise_params)
+net_params = utils.process_model_params(net, layerwise_params=layerwise_params)
 base_optimizer = torch.optim.AdamW(net_params, lr=lr, weight_decay=weight_decay)
 optimizer = Lookahead(base_optimizer)
 lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingWarmRestarts(optimizer, T_0=15, T_mult=2)
+

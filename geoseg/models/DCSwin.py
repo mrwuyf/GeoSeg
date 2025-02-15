@@ -4,6 +4,7 @@ import torch.nn.functional as F
 import torch.utils.checkpoint as checkpoint
 import numpy as np
 from timm.models.layers import DropPath, to_2tuple, trunc_normal_
+from thop import profile
 
 
 class MaxPoolLayer(nn.Sequential):
@@ -961,3 +962,12 @@ def dcswin_tiny(pretrained=True, num_classes=4, weight_path='pretrain_weights/st
         model_dict.update(old_dict)
         model.load_state_dict(model_dict)
     return model
+
+if __name__ == '__main__':
+    model = dcswin_small(pretrained=True, num_classes=6, weight_path=r'D:\DeepLearning\airs\pretrain_weights\stseg_small.pth')
+    model = model.cuda()
+    x = torch.randn(2, 3, 224, 224).cuda()
+    flops, params = profile(model, (x,))
+    print('flops: ', flops, 'params: ', params)
+    print('flops: %.2f G, params: %.2f M' % (flops / 1000000000.0, params / 1000000.0))
+

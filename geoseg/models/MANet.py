@@ -5,6 +5,7 @@ import torch
 from torchvision import models
 from torch import nn
 import timm
+from thop import profile
 
 from functools import partial
 
@@ -174,3 +175,15 @@ class MANet(nn.Module):
         out = self.finalconv3(out)
 
         return out
+
+if __name__ == "__main__":
+    model = MANet(num_classes=6)
+    model = model.cuda()
+    a = torch.ones([2, 3, 224, 224])
+    a = a.cuda()
+    flops, params = profile(model, (a,))
+    print('flops: ', flops, 'params: ', params)
+    print('flops: %.2f G, params: %.2f M' % (flops / 1000000000.0, params / 1000000.0))
+
+    # a, b = model(a)
+    # print(a.shape)

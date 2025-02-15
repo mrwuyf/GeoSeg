@@ -2,8 +2,8 @@ from torch.utils.data import DataLoader
 from geoseg.losses import *
 from geoseg.datasets.vaihingen_dataset import *
 from geoseg.models.FTUNetFormer import ft_unetformer
-from tools.utils import Lookahead
-from tools.utils import process_model_params
+from catalyst.contrib.nn import Lookahead
+from catalyst.utils import process_model_params
 
 # training hparam
 max_epoch = 45

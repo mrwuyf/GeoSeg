@@ -18,9 +18,9 @@ accumulate_n = 1
 num_classes = len(CLASSES)
 classes = CLASSES
 
-weights_name = "dcswin-small-1024-ms-512crop-e70"
+weights_name = "dcswin-small-512-ms-512crop-e70"
 weights_path = "model_weights/vaihingen/{}".format(weights_name)
-test_weights_name = "dcswin-small-1024-ms-512crop-e70"
+test_weights_name = "dcswin-small-512-ms-512crop-e70"
 log_name = 'vaihingen/{}'.format(weights_name)
 monitor = 'val_F1'
 monitor_mode = 'max'

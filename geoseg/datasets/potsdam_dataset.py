@@ -1,5 +1,4 @@
 import os
-os.environ['NO_ALBUMENTATIONS_UPDATE'] = '1'
 import os.path as osp
 import numpy as np
 import torch
@@ -11,6 +10,7 @@ from .transform import *
 import matplotlib.patches as mpatches
 from PIL import Image
 import random
+os.environ['NO_ALBUMENTATIONS_UPDATE'] = '1'
 
 
 CLASSES = ('ImSurf', 'Building', 'LowVeg', 'Tree', 'Car', 'Clutter')
@@ -26,6 +26,7 @@ def get_training_transform():
     train_transform = [
         # albu.RandomBrightnessContrast(brightness_limit=0.25, contrast_limit=0.25, p=0.15),
         # albu.RandomRotate90(p=0.25),
+        albu.RandomRotate90(p=0.5),
         albu.Normalize()
     ]
     return albu.Compose(train_transform)

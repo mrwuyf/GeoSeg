@@ -1,8 +1,12 @@
+from geoseg.models.backbones import resnet
+from geoseg.models._deeplab import DeepLabHead, DeepLabHeadV3Plus, DeepLabV3, DeepLabV3Plus
 from geoseg.models.utils import IntermediateLayerGetter
-from geoseg.models._deeplab import DeepLabHead, DeepLabHeadV3Plus, DeepLabV3
-from geoseg.models.backbones import (resnet)
+
+import timm
 
 import torch
+from thop import profile
+
 
 def _segm_resnet(name, backbone_name, num_classes, output_stride, pretrained_backbone):
     if output_stride == 8:
@@ -15,6 +19,9 @@ def _segm_resnet(name, backbone_name, num_classes, output_stride, pretrained_bac
     backbone = resnet.__dict__[backbone_name](
         pretrained=pretrained_backbone,
         replace_stride_with_dilation=replace_stride_with_dilation)
+
+    # backbone = timm.create_model('resnet50', features_only=True, output_stride=8,
+    #                              out_indices=(1, 2, 3, 4), pretrained=True)
 
     inplanes = 2048
     low_level_planes = 256
@@ -30,8 +37,8 @@ def _segm_resnet(name, backbone_name, num_classes, output_stride, pretrained_bac
     model = DeepLabV3(backbone, classifier)
     return model
 
-def _load_model(arch_type, backbone, num_classes, output_stride, pretrained_backbone):
 
+def _load_model(arch_type, backbone, num_classes, output_stride, pretrained_backbone):
     if backbone.startswith('resnet'):
         model = _segm_resnet(arch_type, backbone, num_classes, output_stride=output_stride,
                              pretrained_backbone=pretrained_backbone)
@@ -39,6 +46,7 @@ def _load_model(arch_type, backbone, num_classes, output_stride, pretrained_back
     else:
         raise NotImplementedError
     return model
+
 
 def deeplabv3plus_resnet50(num_classes=21, output_stride=8, pretrained_backbone=True):
     """Constructs a DeepLabV3 model with a ResNet-50 backbone.
@@ -51,6 +59,7 @@ def deeplabv3plus_resnet50(num_classes=21, output_stride=8, pretrained_backbone=
     return _load_model('deeplabv3plus', 'resnet50', num_classes, output_stride=output_stride,
                        pretrained_backbone=pretrained_backbone)
 
+
 def deeplabv3_resnet50(num_classes=21, output_stride=8, pretrained_backbone=True):
     """Constructs a DeepLabV3 model with a ResNet-50 backbone.
 
@@ -61,4 +70,14 @@ def deeplabv3_resnet50(num_classes=21, output_stride=8, pretrained_backbone=True
     """
     return _load_model('deeplabv3', 'resnet50', num_classes, output_stride=output_stride,
                        pretrained_backbone=pretrained_backbone)
+
+
+if __name__ == '__main__':
+    model = deeplabv3plus_resnet50(num_classes=6)
+    input = torch.randn(2, 3, 256, 256)
+    model = model.cuda()
+    input = input.cuda()
+    flops, params = profile(model, (input,))
+    print('flops: ', flops, 'params: ', params)
+    print('flops: %.2f G, params: %.2f M' % (flops / 1000000000.0, params / 1000000.0))
 

@@ -2,8 +2,8 @@ from torch.utils.data import DataLoader
 from geoseg.losses import *
 from geoseg.datasets.vaihingen_dataset import *
 from geoseg.models.DeepLabv3 import deeplabv3plus_resnet50
-from tools.utils import Lookahead
-from tools.utils import process_model_params
+from catalyst.contrib.nn import Lookahead
+from catalyst import utils
 
 # training hparam
 max_epoch = 100
@@ -17,9 +17,9 @@ backbone_weight_decay = 0.01
 num_classes = len(CLASSES)
 classes = CLASSES
 
-weights_name = "deeplabv3plus-r50-1024-crop-ms-e100"
+weights_name = "deeplabv3plus-r50-512-crop-ms-e100"
 weights_path = "model_weights/vaihingen/{}".format(weights_name)
-test_weights_name = "deeplabv3plus-r50-1024-crop-ms-e100"
+test_weights_name = "deeplabv3plus-r50-512-crop-ms-e100-v1"
 log_name = 'vaihingen/{}'.format(weights_name)
 monitor = 'val_F1'
 monitor_mode = 'max'
@@ -40,11 +40,13 @@ use_aux_loss = False
 
 # define the dataloader
 
-train_dataset = VaihingenDataset(data_root='data/vaihingen/train', mode='train',
+train_dataset = VaihingenDataset(data_root='data/vaihingen/train', img_dir='images_1024',
+                                 mask_dir='masks_1024', mode='train',
                                  mosaic_ratio=0.25, transform=train_aug)
 
 val_dataset = VaihingenDataset(transform=val_aug)
-test_dataset = VaihingenDataset(data_root='data/vaihingen/test',
+test_dataset = VaihingenDataset(data_root='data/vaihingen/test', img_dir='images_1024',
+                                mask_dir='masks_1024',
                                 transform=val_aug)
 
 train_loader = DataLoader(dataset=train_dataset,
@@ -63,7 +65,8 @@ val_loader = DataLoader(dataset=val_dataset,
 
 # define the optimizer
 layerwise_params = {"backbone.*": dict(lr=backbone_lr, weight_decay=backbone_weight_decay)}
-net_params = process_model_params(net, layerwise_params=layerwise_params)
+net_params = utils.process_model_params(net, layerwise_params=layerwise_params)
 base_optimizer = torch.optim.AdamW(net_params, lr=lr, weight_decay=weight_decay)
 optimizer = Lookahead(base_optimizer)
 lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingWarmRestarts(optimizer, T_0=15, T_mult=2)
+
