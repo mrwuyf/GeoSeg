@@ -16,12 +16,12 @@ def _segm_resnet(name, backbone_name, num_classes, output_stride, pretrained_bac
         replace_stride_with_dilation = [False, False, True]
         aspp_dilate = [6, 12, 18]
 
-    backbone = resnet.__dict__[backbone_name](
-        pretrained=pretrained_backbone,
-        replace_stride_with_dilation=replace_stride_with_dilation)
+    # backbone = resnet.__dict__[backbone_name](
+    #     pretrained=pretrained_backbone,
+    #     replace_stride_with_dilation=replace_stride_with_dilation)
 
-    # backbone = timm.create_model('resnet50', features_only=True, output_stride=8,
-    #                              out_indices=(1, 2, 3, 4), pretrained=True)
+    backbone = timm.create_model('resnet50.a1_in1k', features_only=True, output_stride=8,
+                                 out_indices=(1, 2, 3, 4), pretrained=True)
 
     inplanes = 2048
     low_level_planes = 256
@@ -32,9 +32,9 @@ def _segm_resnet(name, backbone_name, num_classes, output_stride, pretrained_bac
     elif name == 'deeplabv3':
         return_layers = {'layer4': 'out'}
         classifier = DeepLabHead(inplanes, num_classes, aspp_dilate)
-    backbone = IntermediateLayerGetter(backbone, return_layers=return_layers)
+    # backbone = IntermediateLayerGetter(backbone, return_layers=return_layers)
 
-    model = DeepLabV3(backbone, classifier)
+    model = DeepLabV3Plus(backbone, classifier)
     return model
 
 

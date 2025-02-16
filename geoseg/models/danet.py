@@ -109,17 +109,19 @@ class DANet(nn.Module):
     def __init__(self, num_classes):
         super(DANet, self).__init__()
         self.num_classes = num_classes
-        self.backbone = resnet.resnet50(pretrained=True, replace_stride_with_dilation=[False, True, True])
-        self.backbone = IntermediateLayerGetter(
-                 self.backbone,
-                 return_layers={'layer4': 'stage4'}
-             )
+        # self.backbone = resnet.resnet50(pretrained=True, replace_stride_with_dilation=[False, True, True])
+        # self.backbone = IntermediateLayerGetter(
+        #          self.backbone,
+        #          return_layers={'layer4': 'stage4'}
+        #      )
+        self.backbone = timm.create_model('resnet50.a1_in1k', features_only=True, output_stride=8,
+                                          out_indices=(1, 2, 3, 4), pretrained=True)
         self.head = DANetHead(2048, out_channels=self.num_classes)
 
     def forward(self, x):
         _, _, h, w = x.size()
-        features = self.backbone(x)
-        output = self.head(features['stage4'])
+        res1, res2, res3, res4 = self.backbone(x)
+        output = self.head(res4)
         output = nn.functional.interpolate(output, size=(h, w), mode='bilinear', align_corners=True)
         return output
 

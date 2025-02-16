@@ -24,7 +24,7 @@ class Unet(nn.Module):
 
     def __init__(
             self,
-            backbone='resnet50',
+            backbone='resnet50.a1_in1k',
             backbone_kwargs=None,
             backbone_indices=None,
             decoder_use_batchnorm=True,

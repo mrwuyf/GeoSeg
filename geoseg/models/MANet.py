@@ -132,7 +132,7 @@ class DecoderBlock(nn.Module):
 
 
 class MANet(nn.Module):
-    def __init__(self, num_channels=3, num_classes=5, backbone_name='resnet50', pretrained=True):
+    def __init__(self, num_channels=3, num_classes=5, backbone_name='resnet50.a1_in1k', pretrained=True):
         super(MANet, self).__init__()
         self.name = 'MANet'
 
