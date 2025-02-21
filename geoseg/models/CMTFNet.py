@@ -2,10 +2,10 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from einops import rearrange, repeat
-from geoseg.models.ResNet import *
+from geoseg.models.backbones import resnet
 from timm.models.layers import DropPath, to_2tuple, trunc_normal_
-import timm
 from thop import profile
+from torchvision.models._utils import IntermediateLayerGetter
 
 class ConvBNReLU(nn.Sequential):
     def __init__(self, in_channels, out_channels, kernel_size=3, dilation=1, stride=1, norm_layer=nn.BatchNorm2d, groups=1, bias=False):
@@ -355,22 +355,29 @@ class CMTFNet(nn.Module):
                  decode_channels=512,
                  dropout=0.1,
                  num_classes=6,
-                 backbone=ResNet50
                  ):
         super().__init__()
 
-        self.backbone =timm.create_model('resnet50.a1_in1k', features_only=True, output_stride=32,
-                                          out_indices=(1, 2, 3, 4), pretrained=True)
+        # self.backbone =timm.create_model('resnet50.a1_in1k', features_only=True, output_stride=32,
+        #                                   out_indices=(1, 2, 3, 4), pretrained=True)
+        self.backbone = resnet.resnet50(pretrained=True)
+        self.backbone = IntermediateLayerGetter(self.backbone,
+                                                return_layers={'layer1': "res1", "layer2": "res2",
+                                                               "layer3": "res3", "layer4": "res4"})
         self.decoder = Decoder(encode_channels, decode_channels, dropout=dropout, num_classes=num_classes)
 
     def forward(self, x):
         h, w = x.size()[-2:]
-        res1, res2, res3, res4 = self.backbone(x)
+        features = self.backbone(x)
+        res1 = features['res1']
+        res2 = features['res2']
+        res3 = features['res3']
+        res4 = features['res4']
         x = self.decoder(res1, res2, res3, res4, h, w)
         return x
 
 if __name__ == '__main__':
-    x = torch.randn(1, 3, 512, 512)
+    x = torch.randn(2, 3, 256, 256)
     net = CMTFNet()
     out = net(x)
     print(net)

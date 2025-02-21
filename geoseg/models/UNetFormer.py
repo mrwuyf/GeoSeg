@@ -3,7 +3,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 from einops import rearrange, repeat
 from thop import profile
-
+from geoseg.models.backbones import (resnet)
+from torchvision.models._utils import IntermediateLayerGetter
 from timm.models.layers import DropPath, to_2tuple, trunc_normal_
 import timm
 
@@ -378,11 +379,49 @@ class UNetFormer(nn.Module):
             x = self.decoder(res1, res2, res3, res4, h, w)
             return x
 
+
+class UNetFormerRes50(nn.Module):
+    def __init__(self,
+                 decode_channels=64,
+                 dropout=0.1,
+                 backbone_name='swsl_resnet18',
+                 pretrained=True,
+                 window_size=8,
+                 num_classes=6
+                 ):
+        super().__init__()
+
+        # self.backbone = timm.create_model(backbone_name, features_only=True, output_stride=32,
+        #                                   out_indices=(1, 2, 3, 4), pretrained=pretrained)
+        # encoder_channels = self.backbone.feature_info.channels()
+        self.backbone = resnet.resnet50(pretrained=True)
+        self.backbone = IntermediateLayerGetter(self.backbone,
+                                                return_layers={'layer1': "res1", "layer2": "res2",
+                                                               "layer3": "res3", "layer4": "res4"})
+        encoder_channels = (256, 512, 1024, 2048)
+
+        self.decoder = Decoder(encoder_channels, decode_channels, dropout, window_size, num_classes)
+
+    def forward(self, x):
+        h, w = x.size()[-2:]
+        features = self.backbone(x)
+        res1 = features['res1']
+        res2 = features['res2']
+        res3 = features['res3']
+        res4 = features['res4']
+        if self.training:
+            x, ah = self.decoder(res1, res2, res3, res4, h, w)
+            return x, ah
+        else:
+            x = self.decoder(res1, res2, res3, res4, h, w)
+            return x
+
+
 if __name__ == '__main__':
-    net = UNetFormer(num_classes=6)
+    net = UNetFormerRes50(num_classes=6)
     net.cuda()
     net.train()
-    in_ten = torch.randn(4, 3, 512, 512).cuda()
+    in_ten = torch.randn(2, 3, 256, 256).cuda()
     out = net(in_ten)
     flops, params = profile(net, (in_ten,))
     print('flops: ', flops, 'params: ', params)

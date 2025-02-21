@@ -80,14 +80,14 @@ class Pspnet(nn.Module):
     def __init__(self, num_classes):
         super(Pspnet, self).__init__()
         self.num_classes = num_classes
-        # self.backbone = resnet.resnet50(pretrained=True, replace_stride_with_dilation=[False, True, True])
-        #
-        # self.backbone = IntermediateLayerGetter(
-        #     self.backbone,
-        #     return_layers={'layer3': "aux", 'layer4': 'stage4'}
-        # )
-        self.backbone = timm.create_model('resnet50.a1_in1k', features_only=True, output_stride=8,
-                                          out_indices=(1, 2, 3, 4), pretrained=True)
+        self.backbone = resnet.resnet50(pretrained=True, replace_stride_with_dilation=[False, True, True])
+
+        self.backbone = IntermediateLayerGetter(
+            self.backbone,
+            return_layers={'layer3': "aux", 'layer4': 'stage4'}
+        )
+        # self.backbone = timm.create_model('resnet50.a1_in1k', features_only=True, output_stride=8,
+        #                                   out_indices=(1, 2, 3, 4), pretrained=True)
 
         self.decoder = PSPHEAD(in_channels=2048, out_channels=512, pool_sizes=[1, 2, 3, 6],
                                num_classes=self.num_classes)
@@ -99,16 +99,16 @@ class Pspnet(nn.Module):
 
     def forward(self, x):
         _, _, h, w = x.size()
-        # features = self.backbone(x)
-        # x = self.decoder(features['stage4'])
-        res1, res2, res3, res4 = self.backbone(x)
-        x = self.decoder(res4)
+        features = self.backbone(x)
+        x = self.decoder(features['stage4'])
+        # res1, res2, res3, res4 = self.backbone(x)
+        # x = self.decoder(x)
         x = self.cls_seg(x)
         x = nn.functional.interpolate(x, size=(h, w), mode='bilinear', align_corners=True)
 
         # 如果需要添加辅助损失
         if self.training:
-            aux_output = self.aux_head(res3)
+            aux_output = self.aux_head(features['aux'])
             aux_output = nn.functional.interpolate(aux_output, size=(h, w), mode='bilinear', align_corners=True)
 
             return x, aux_output
@@ -119,11 +119,10 @@ if __name__ == "__main__":
     model = Pspnet(num_classes=6)
     model = model.cuda()
     model.train()
-    a = torch.ones([2, 3, 224, 224])
-    a = a.cuda()
+    a = torch.randn(2, 3, 256, 256).cuda()
     flops, params = profile(model, (a,))
     print('flops: ', flops, 'params: ', params)
     print('flops: %.2f G, params: %.2f M' % (flops / 1000000000.0, params / 1000000.0))
 
-    # a, b = model(a)
-    # print(a.shape)
+    a, b = model(a)
+    print(a.shape)

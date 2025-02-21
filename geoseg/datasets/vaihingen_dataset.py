@@ -15,13 +15,13 @@ from .transform import *
 CLASSES = ('ImSurf', 'Building', 'LowVeg', 'Tree', 'Car', 'Clutter')
 PALETTE = [[255, 255, 255], [0, 0, 255], [0, 255, 255], [0, 255, 0], [255, 204, 0], [255, 0, 0]]
 
-# ORIGIN_IMG_SIZE = (1024, 1024)
-# INPUT_IMG_SIZE = (1024, 1024)
-# TEST_IMG_SIZE = (1024, 1024)
+ORIGIN_IMG_SIZE = (1024, 1024)
+INPUT_IMG_SIZE = (1024, 1024)
+TEST_IMG_SIZE = (1024, 1024)
 
-ORIGIN_IMG_SIZE = (512, 512)
-INPUT_IMG_SIZE = (512, 512)
-TEST_IMG_SIZE = (512, 512)
+# ORIGIN_IMG_SIZE = (512, 512)
+# INPUT_IMG_SIZE = (512, 512)
+# TEST_IMG_SIZE = (512, 512)
 
 
 def get_training_transform():
@@ -58,7 +58,7 @@ def val_aug(img, mask):
 
 
 class VaihingenDataset(Dataset):
-    def __init__(self, data_root='data/vaihingen/test', mode='val', img_dir='images_512', mask_dir='masks_512',
+    def __init__(self, data_root='data/vaihingen/test', mode='val', img_dir='images_1024', mask_dir='masks_1024',
                  img_suffix='.tif', mask_suffix='.png', transform=val_aug, mosaic_ratio=0.0,
                  img_size=ORIGIN_IMG_SIZE):
         self.data_root = data_root

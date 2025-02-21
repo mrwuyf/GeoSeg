@@ -4,6 +4,7 @@ import numpy as np
 import torch.nn.functional as F
 from collections import OrderedDict
 from geoseg.models.backbones import (resnet)
+import math
 
 
 class _SimpleSegmentationModel(nn.Module):
@@ -94,6 +95,24 @@ class IntermediateLayerGetter(nn.ModuleDict):
                 else:
                     out[out_name] = x
         return out
+
+
+class WarmupCosineAnnealingLR(torch.optim.lr_scheduler._LRScheduler):
+    def __init__(self, optimizer, warmup_epochs, max_epochs, last_epoch=-1):
+        self.warmup_epochs = warmup_epochs
+        self.max_epochs = max_epochs
+        super(WarmupCosineAnnealingLR, self).__init__(optimizer, last_epoch)
+
+    def get_lr(self):
+        if self.last_epoch < self.warmup_epochs:
+            # 线性预热
+            lr = [base_lr * (self.last_epoch + 1) / self.warmup_epochs for base_lr in self.base_lrs]
+        else:
+            # 余弦退火调整
+            cos_epoch = self.last_epoch - self.warmup_epochs
+            cos_epochs = self.max_epochs - self.warmup_epochs
+            lr = [base_lr * (1 + math.cos(math.pi * cos_epoch / cos_epochs)) / 2 for base_lr in self.base_lrs]
+        return lr
 
 if __name__ == "__main__":
     m = resnet.resnet50(pretrained=True)

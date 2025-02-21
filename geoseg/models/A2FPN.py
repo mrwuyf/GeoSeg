@@ -4,6 +4,9 @@ import torch.nn.functional as F
 from torchvision import models
 from torch.nn import Module, Conv2d, Parameter, Softmax
 from collections import OrderedDict
+import timm
+from geoseg.models.backbones import (resnet)
+from torchvision.models._utils import IntermediateLayerGetter
 
 
 def conv3otherRelu(in_planes, out_planes, kernel_size=None, stride=None, padding=None):
@@ -221,22 +224,28 @@ class A2FPN(nn.Module):
     def __init__(
             self,
             band=3,
-            class_num=6,
-            encoder_channels=[512, 256, 128, 64],
+            num_classes=6,
+            encoder_channels=[2048, 1024, 512, 256],
             pyramid_channels=64,
             segmentation_channels=64,
             dropout=0.2,
     ):
         super().__init__()
         self.name = 'A2FPN'
-        self.base_model = models.resnet18(pretrained=True)
-        self.base_layers = list(self.base_model.children())
-        # ==> encoder layers
-        self.layer_down0 = nn.Sequential(*self.base_layers[:3])  # size=(N, 64, x.H/2, x.W/2)
-        self.layer_down1 = nn.Sequential(*self.base_layers[3:5])  # size=(N, 64, x.H/4, x.W/4)
-        self.layer_down2 = self.base_layers[5]  # size=(N, 128, x.H/8, x.W/8)
-        self.layer_down3 = self.base_layers[6]  # size=(N, 256, x.H/16, x.W/16)
-        self.layer_down4 = self.base_layers[7]  # size=(N, 512, x.H/32, x.W/32)
+        # self.base_model = models.resnet18(pretrained=True)
+        # self.base_layers = list(self.base_model.children())
+        # # ==> encoder layers
+        # self.layer_down0 = nn.Sequential(*self.base_layers[:3])  # size=(N, 64, x.H/2, x.W/2)
+        # self.layer_down1 = nn.Sequential(*self.base_layers[3:5])  # size=(N, 64, x.H/4, x.W/4)
+        # self.layer_down2 = self.base_layers[5]  # size=(N, 128, x.H/8, x.W/8)
+        # self.layer_down3 = self.base_layers[6]  # size=(N, 256, x.H/16, x.W/16)
+        # self.layer_down4 = self.base_layers[7]  # size=(N, 512, x.H/32, x.W/32)
+        # self.backbone = timm.create_model('resnet50.a1_in1k', features_only=True, output_stride=32,
+        #                                   out_indices=(1, 2, 3, 4), pretrained=True)
+        self.backbone = resnet.resnet50(pretrained=True)
+        self.backbone = IntermediateLayerGetter(self.backbone,
+                                                return_layers={'layer1': "res1", "layer2": "res2",
+                                                               "layer3": "res3", "layer4": "res4"})
 
         self.conv1 = nn.Conv2d(encoder_channels[0], pyramid_channels, kernel_size=(1, 1))
 
@@ -250,17 +259,23 @@ class A2FPN(nn.Module):
         self.s2 = SegmentationBlock(pyramid_channels, segmentation_channels, n_upsamples=0)
 
         self.attention = AttentionAggregationModule(segmentation_channels * 4, segmentation_channels * 4)
-        self.final_conv = nn.Conv2d(segmentation_channels * 4, class_num, kernel_size=1, padding=0)
+        self.final_conv = nn.Conv2d(segmentation_channels * 4, num_classes, kernel_size=1, padding=0)
         self.dropout = nn.Dropout2d(p=dropout, inplace=True)
 
     def forward(self, x):
         # ==> get encoder features
-        c1 = self.layer_down0(x)
-        c2 = self.layer_down1(c1)
-        c3 = self.layer_down2(c2)
-        c4 = self.layer_down3(c3)
-        c5 = self.layer_down4(c4)
+        # c1 = self.layer_down0(x)
+        # c2 = self.layer_down1(c1)
+        # c3 = self.layer_down2(c2)
+        # c4 = self.layer_down3(c3)
+        # c5 = self.layer_down4(c4)
         # c5, c4, c3, c2, _ = x
+        # c2, c3, c4, c5 = self.backbone(x) #timm
+        features = self.backbone(x)
+        c2 = features['res1']
+        c3 = features['res2']
+        c4 = features['res3']
+        c5 = features['res4']
 
         p5 = self.conv1(c5)
         p4 = self.p4([p5, c4])
@@ -278,3 +293,14 @@ class A2FPN(nn.Module):
 
         return out
 
+
+if __name__ == '__main__':
+    from thop import profile
+    model = A2FPN(num_classes=6).cuda()
+    x = torch.randn(2, 3, 256, 256).cuda()
+    flops, params = profile(model, (x,))
+    out = model(x)
+
+    print('flops: ', flops, 'params: ', params)
+    print('flops: %.2f G, params: %.2f M' % (flops / 1000000000.0, params / 1000000.0))
+    print(out.shape)

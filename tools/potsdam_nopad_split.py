@@ -191,23 +191,14 @@ def patch_format(inp):
         for y in range(0, img.shape[0], stride):
             for x in range(0, img.shape[1], stride):
                 # Check if we're at the bottom-right corner and the remaining area is smaller than split_size
-                img_tile_cut = img[y:y + split_size, x:x + split_size]
-                mask_tile_cut = mask[y:y + split_size, x:x + split_size]
+                if y + split_size > img.shape[0]:
+                    y = img.shape[0] - split_size
+                # 处理最后一列的裁剪
+                if x + split_size > img.shape[1]:
+                    x = img.shape[1] - split_size
 
-                # Handle last row and column cases where the patch is smaller than split_size
-                if y + split_size > img.shape[0] or x + split_size > img.shape[1]:
-                    # Handle last row
-                    if y + split_size > img.shape[0]:
-                        img_tile_cut = img[-split_size:, x:x + split_size]
-                        mask_tile_cut = mask[-split_size:, x:x + split_size]
-                    # Handle last column
-                    if x + split_size > img.shape[1]:
-                        img_tile_cut = img[y:y + split_size, -split_size:]
-                        mask_tile_cut = mask[y:y + split_size, -split_size:]
-
-                # Ensure we always get a 1024x1024 patch
-                img_tile = img_tile_cut
-                mask_tile = mask_tile_cut
+                img_tile = img[y:y + split_size, x:x + split_size]
+                mask_tile = mask[y:y + split_size, x:x + split_size]
 
                 if img_tile.shape[0] == split_size and img_tile.shape[1] == split_size \
                         and mask_tile.shape[0] == split_size and mask_tile.shape[1] == split_size:
@@ -232,23 +223,6 @@ def patch_format(inp):
                         cv2.imwrite(out_mask_path, mask_tile)
 
                 k += 1
-
-        # Special handling for the right-bottom corner patch (if it's not full)
-        # If the right-bottom part of the image is smaller than split_size, we create a separate patch for it
-        if img.shape[0] % split_size != 0 or img.shape[1] % split_size != 0:
-            last_y = img.shape[0] - (img.shape[0] % split_size)
-            last_x = img.shape[1] - (img.shape[1] % split_size)
-            # Cropping the right-bottom part as a separate patch
-            img_tile_cut = img[last_y:, last_x:]
-            mask_tile_cut = mask[last_y:, last_x:]
-
-            # Ensure this last patch has the right naming, using the same k as before
-            out_img_path = os.path.join(imgs_output_dir, "{}_{}_{}.tif".format(img_filename, m, k-1))
-            out_mask_path = os.path.join(masks_output_dir, "{}_{}_{}.png".format(mask_filename, m, k-1))
-
-            # Save the last patch of the right-bottom with same k increment
-            cv2.imwrite(out_img_path, img_tile_cut)
-            cv2.imwrite(out_mask_path, mask_tile_cut)
 
 
 if __name__ == "__main__":

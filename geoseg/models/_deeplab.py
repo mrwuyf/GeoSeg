@@ -58,11 +58,11 @@ class DeepLabHeadV3Plus(nn.Module):
         )
         self._init_weight()
 
-    def forward(self, res1, res4):
-        # low_level_feature = self.project(features['low_level'])
-        # output_feature = self.aspp(features['out'])
-        low_level_feature = self.project(res1)
-        output_feature = self.aspp(res4)
+    def forward(self, features):
+        low_level_feature = self.project(features['low_level'])
+        output_feature = self.aspp(features['out'])
+        # low_level_feature = self.project(res1)
+        # output_feature = self.aspp(res4)
         output_feature = F.interpolate(output_feature, size=low_level_feature.shape[2:], mode='bilinear',
                                        align_corners=False)
         return self.classifier(torch.cat([low_level_feature, output_feature], dim=1))

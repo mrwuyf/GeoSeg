@@ -17,9 +17,9 @@ backbone_weight_decay = 0.01
 num_classes = len(CLASSES)
 classes = CLASSES
 
-weights_name = "abcnet-r18-512-crop-ms-e100"
+weights_name = "abcnet-r18-1024-crop-ms-e100"
 weights_path = "model_weights/vaihingen/{}".format(weights_name)
-test_weights_name = "abcnet-r18-512-crop-ms-e100"
+test_weights_name = "abcnet-r18-1024-crop-ms-e100"
 log_name = 'vaihingen/{}'.format(weights_name)
 monitor = 'val_F1'
 monitor_mode = 'max'

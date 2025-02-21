@@ -161,3 +161,7 @@ class PotsdamDataset(Dataset):
         mask = Image.fromarray(mask)
 
         return img, mask
+
+
+if __name__ == '__main__':
+    mydata = PotsdamDataset(data_root=r'D:\DeepLearning\airs\data\potsdam\test', transform=val_aug)

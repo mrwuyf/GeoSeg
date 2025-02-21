@@ -109,19 +109,19 @@ class DANet(nn.Module):
     def __init__(self, num_classes):
         super(DANet, self).__init__()
         self.num_classes = num_classes
-        # self.backbone = resnet.resnet50(pretrained=True, replace_stride_with_dilation=[False, True, True])
-        # self.backbone = IntermediateLayerGetter(
-        #          self.backbone,
-        #          return_layers={'layer4': 'stage4'}
-        #      )
-        self.backbone = timm.create_model('resnet50.a1_in1k', features_only=True, output_stride=8,
-                                          out_indices=(1, 2, 3, 4), pretrained=True)
+        self.backbone = resnet.resnet50(pretrained=True, replace_stride_with_dilation=[False, True, True])
+        self.backbone = IntermediateLayerGetter(
+                 self.backbone,
+                 return_layers={'layer4': 'stage4'}
+             )
+        # self.backbone = timm.create_model('resnet50.a1_in1k', features_only=True, output_stride=8,
+        #                                   out_indices=(1, 2, 3, 4), pretrained=True)
         self.head = DANetHead(2048, out_channels=self.num_classes)
 
     def forward(self, x):
         _, _, h, w = x.size()
-        res1, res2, res3, res4 = self.backbone(x)
-        output = self.head(res4)
+        features = self.backbone(x)
+        output = self.head(features['stage4'])
         output = nn.functional.interpolate(output, size=(h, w), mode='bilinear', align_corners=True)
         return output
 
@@ -129,8 +129,9 @@ class DANet(nn.Module):
 if __name__ == "__main__":
     model = DANet(num_classes=6)
     model = model.cuda()
-    a = torch.ones([2, 3, 224, 224])
+    a = torch.randn(2, 3, 256, 256)
     a = a.cuda()
+    print(a.shape)
     flops, params = profile(model, (a,))
     print('flops: ', flops, 'params: ', params)
     print('flops: %.2f G, params: %.2f M' % (flops / 1000000000.0, params / 1000000.0))

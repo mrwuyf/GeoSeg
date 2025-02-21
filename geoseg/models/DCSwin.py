@@ -966,7 +966,7 @@ def dcswin_tiny(pretrained=True, num_classes=4, weight_path='pretrain_weights/st
 if __name__ == '__main__':
     model = dcswin_small(pretrained=True, num_classes=6, weight_path=r'D:\DeepLearning\airs\pretrain_weights\stseg_small.pth')
     model = model.cuda()
-    x = torch.randn(2, 3, 224, 224).cuda()
+    x = torch.randn(2, 3, 256, 256).cuda()
     flops, params = profile(model, (x,))
     print('flops: ', flops, 'params: ', params)
     print('flops: %.2f G, params: %.2f M' % (flops / 1000000000.0, params / 1000000.0))
