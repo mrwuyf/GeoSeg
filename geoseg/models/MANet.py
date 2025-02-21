@@ -1,8 +1,8 @@
 import torch.nn.functional as F
 from torch.nn import Module, Conv2d, Parameter, Softmax
-from torchvision.models import resnet
+from geoseg.models.backbones import (resnet)
 import torch
-from torchvision import models
+from torchvision.models._utils import IntermediateLayerGetter
 from torch import nn
 import timm
 from thop import profile
@@ -135,10 +135,15 @@ class MANet(nn.Module):
     def __init__(self, num_channels=3, num_classes=5, backbone_name='resnet50.a1_in1k', pretrained=True):
         super(MANet, self).__init__()
         self.name = 'MANet'
+        self.backbone = resnet.resnet50(pretrained=True)
+        self.backbone = IntermediateLayerGetter(self.backbone,
+                                                return_layers={'layer1': "res1", "layer2": "res2",
+                                                               "layer3": "res3", "layer4": "res4"})
 
-        self.backbone = timm.create_model(backbone_name, features_only=True, output_stride=32,
-                                          out_indices=(1, 2, 3, 4), pretrained=pretrained)
-        filters = self.backbone.feature_info.channels()
+        # self.backbone = timm.create_model(backbone_name, features_only=True, output_stride=32,
+        #                                   out_indices=(1, 2, 3, 4), pretrained=pretrained)
+        # filters = self.backbone.feature_info.channels()
+        filters = (256, 512, 1024, 2048)
 
         self.attention4 = PAM_CAM_Layer(filters[3])
         self.attention3 = PAM_CAM_Layer(filters[2])
@@ -158,7 +163,12 @@ class MANet(nn.Module):
 
     def forward(self, x):
         # Encoder
-        e1, e2, e3, e4 = self.backbone(x)
+        # e1, e2, e3, e4 = self.backbone(x)
+        features = self.backbone(x)
+        e1 = features['res1']
+        e2 = features['res2']
+        e3 = features['res3']
+        e4 = features['res4']
 
         e4 = self.attention4(e4)
 
@@ -179,8 +189,7 @@ class MANet(nn.Module):
 if __name__ == "__main__":
     model = MANet(num_classes=6)
     model = model.cuda()
-    a = torch.ones([2, 3, 224, 224])
-    a = a.cuda()
+    a = torch.randn(2, 3, 256, 256).cuda()
     flops, params = profile(model, (a,))
     print('flops: ', flops, 'params: ', params)
     print('flops: %.2f G, params: %.2f M' % (flops / 1000000000.0, params / 1000000.0))
